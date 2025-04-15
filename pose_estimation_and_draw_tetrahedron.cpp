@@ -7,14 +7,6 @@
 #include <vector>
 #include <iostream>
 
-bool g_isRecorded = false;
-bool g_isFlipped = false;
-
-constexpr int SPACE_ASCII = 32;
-constexpr int ESC_ASCII = 27;
-constexpr int F_ASCII = 'F';
-constexpr int f_ASCII = 'f';
-
 constexpr int BOARD_WIDTH = 10;
 constexpr int BOARD_HEIGHT = 7;
 constexpr float BOARD_CELL_SIZE = 0.025f;
@@ -31,7 +23,7 @@ int main(int argc, char** argv)
 	bool ret = 0;
 	cv::Mat buffer1, buffer2;
 
-	std::vector<cv::Point3d>  vertex = { cv::Point3d( 4 * BOARD_CELL_SIZE, 2 * BOARD_CELL_SIZE,  -2 * BOARD_CELL_SIZE) };
+	std::vector<cv::Point3d>  vertex = { cv::Point3d(4 * BOARD_CELL_SIZE, 2 * BOARD_CELL_SIZE,  -2 * BOARD_CELL_SIZE) };
 	std::vector<cv::Point3d> triangle_lower = { cv::Point3d(3 * BOARD_CELL_SIZE, 1 * BOARD_CELL_SIZE, 0),  cv::Point3d(5 * BOARD_CELL_SIZE, 1 * BOARD_CELL_SIZE, 0),
 	cv::Point3d(4 * BOARD_CELL_SIZE, 3 * BOARD_CELL_SIZE, 0) };
 
@@ -85,8 +77,24 @@ int main(int argc, char** argv)
 
 				cv::Mat _3DRotationMatrix;
 				cv::Rodrigues(rvec, _3DRotationMatrix);
+
+				double sy = sqrt(_3DRotationMatrix.at<double>(0, 0) * _3DRotationMatrix.at<double>(0, 0) +
+						  _3DRotationMatrix.at<double>(1, 0) * _3DRotationMatrix.at<double>(1, 0));
+				bool singular = sy < 1e-6;
+
 				cv::Mat temp = -_3DRotationMatrix.t() * tvec;
 				std::cout << "X, Y, Z: " << cv::Point3d(temp) << std::endl;
+
+				if (singular != true) {
+					std::cout << "roll: " << std::atan2(_3DRotationMatrix.at<double>(2, 1), _3DRotationMatrix.at<double>(2, 2)) << std::endl;
+					std::cout << "pitch: " << std::atan2(-_3DRotationMatrix.at<double>(2, 0), sy) << std::endl;
+					std::cout << "yaw: " << std::atan2(_3DRotationMatrix.at<double>(1, 0), _3DRotationMatrix.at<double>(0, 0)) << std::endl;
+				}
+				else {
+					std::cout << "roll: " << std::atan2(-_3DRotationMatrix.at<double>(1, 2), _3DRotationMatrix.at<double>(1, 1)) << std::endl;
+					std::cout << "pitch: " << std::atan2(-_3DRotationMatrix.at<double>(2, 0), sy) << std::endl;
+					std::cout << "yaw: " << 0 << std::endl;
+				}
 			}
 
 			cv::imshow("record", buffer);
